@@ -9,7 +9,7 @@ app.use(express.json());
 
 // conexión a PostgreSQL (Railway)
 const pool = new Pool({
-  connectionString: "TU_URL_DE_CONEXION_RAILWAY",
+  connectionString: "postgresql://postgres:HTIIdfzPdZEMKEZulcOqoKHrlAidJstw@caboose.proxy.rlwy.net:18595/railway",
   ssl: {
     rejectUnauthorized: false
   }
