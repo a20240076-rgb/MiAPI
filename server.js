@@ -1,58 +1,94 @@
-
 const express = require("express");
 const cors = require("cors");
+const { Pool } = require("pg");
+
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-let datos = [
-  { id: 1, nombre: "Taco", precio: 20 },
-  { id: 2, nombre: "Quesadilla", precio: 25 }
-];
-
-
-// Obtener todos
-app.get("/productos", (req, res) => {
-  res.json(datos);
+// conexión a PostgreSQL (Railway)
+const pool = new Pool({
+  connectionString: "TU_URL_DE_CONEXION_RAILWAY",
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
 
-// Obtener uno
-app.get("/productos/:id", (req, res) => {
-  const producto = datos.find(p => p.id == req.params.id);
-  res.json(producto);
+// ================= OBTENER TODOS =================
+
+app.get("/productos", async (req, res) => {
+
+  const resultado = await pool.query("SELECT * FROM productos");
+
+  res.json(resultado.rows);
+
 });
 
 
-// Agregar
-app.post("/productos", (req, res) => {
-  const nuevo = {
-    id: datos.length + 1,
-    nombre: req.body.nombre,
-    precio: req.body.precio
-  };
+// ================= OBTENER UNO =================
 
-  datos.push(nuevo);
-  res.json(nuevo);
+app.get("/productos/:id", async (req, res) => {
+
+  const id = req.params.id;
+
+  const resultado = await pool.query(
+    "SELECT * FROM productos WHERE id=$1",
+    [id]
+  );
+
+  res.json(resultado.rows[0]);
+
 });
 
 
-// Editar
-app.put("/productos/:id", (req, res) => {
-  const producto = datos.find(p => p.id == req.params.id);
+// ================= AGREGAR =================
 
-  producto.nombre = req.body.nombre;
-  producto.precio = req.body.precio;
+app.post("/productos", async (req, res) => {
 
-  res.json(producto);
+  const { nombre, precio } = req.body;
+
+  const resultado = await pool.query(
+    "INSERT INTO productos(nombre,precio) VALUES($1,$2) RETURNING *",
+    [nombre, precio]
+  );
+
+  res.json(resultado.rows[0]);
+
 });
 
 
-// Eliminar
-app.delete("/productos/:id", (req, res) => {
-  datos = datos.filter(p => p.id != req.params.id);
+// ================= EDITAR =================
+
+app.put("/productos/:id", async (req, res) => {
+
+  const id = req.params.id;
+  const { nombre, precio } = req.body;
+
+  const resultado = await pool.query(
+    "UPDATE productos SET nombre=$1, precio=$2 WHERE id=$3 RETURNING *",
+    [nombre, precio, id]
+  );
+
+  res.json(resultado.rows[0]);
+
+});
+
+
+// ================= ELIMINAR =================
+
+app.delete("/productos/:id", async (req, res) => {
+
+  const id = req.params.id;
+
+  await pool.query(
+    "DELETE FROM productos WHERE id=$1",
+    [id]
+  );
+
   res.json({ mensaje: "Producto eliminado" });
+
 });
 
 
